@@ -4,6 +4,7 @@ require("Validator/CNCMachine.php");
 require("Validator/CNCMillingValidator.php");
 require("Validator/DoesNotFitException.php");
 require("Validator/UnreachableAreaException.php");
+require "pointLocation.php";
 
 if (count($argv) !== 2) {
     die("Usage: php " . $argv[0] . " file-path\n");

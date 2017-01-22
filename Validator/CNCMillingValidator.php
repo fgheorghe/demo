@@ -1,5 +1,9 @@
 <?php declare(strict_types = 1);
 
+require "vendor/guiguiboy/php-cli-progress-bar/ProgressBar/Manager.php";
+require "vendor/guiguiboy/php-cli-progress-bar/ProgressBar/Registry.php";
+use \ProgressBar\Manager;
+
 /**
  * Class CNCMillingValidator
  */
@@ -157,42 +161,22 @@ class CNCMillingValidator
         if (!$this->canReach()) throw new UnreachableAreaException();
     }
 
-    // Based on: http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
-    private function doLinesIntersect(float $p0x, float $p0y, float $p1x, float $p1y, float $p2x, float $p2y, float $p3x, float $p3y ) : bool
-    {
-        $s1x = $p1x - $p0x; $s1y = $p1y - $p0y;
-        $s2x = $p3x - $p2x; $s2y = $p3y - $p2y;
-
-        if ((-1 * $s2x * $s1y + $s1x * $s2y) != 0) {
-            $s = (-1 * $s1y * ($p0x - $p2x) + $s1x * ($p0y - $p2y)) / (-1 * $s2x * $s1y + $s1x * $s2y);
-        } else {
-            $s = 0;
-        }
-        if ((-1 * $s2x * $s1y + $s1x * $s2y) != 0) {
-            $t = ($s2x * ($p0y - $p2y) - $s2y * ($p0x - $p2x)) / (-1 * $s2x * $s1y + $s1x * $s2y);
-        } else {
-            $t = 0;
-        }
-
-        return ($s >= 0 && $s <= 1 && $t >= 0 && $t <= 1);
-    }
-
     // Builds segments of a layer, used for verifying intersections.
     private function buildLayerLines(array $coordinates)
     {
         $lines = array();
 
         for ($i = 1; $i < count($coordinates); $i++) {
-            $lines[] = array(
-                $coordinates[$i - 1],
-                $coordinates[$i]
-            );
+            $lines[] =
+                $coordinates[$i - 1][0] . " " . $coordinates[$i - 1][1];
+            $lines[] =
+                $coordinates[$i][0] . " " . $coordinates[$i][1];
         }
 
-        $lines[] = array(
-            $coordinates[$i - 1],
-            $coordinates[0]
-        );
+        $lines[] =
+            $coordinates[$i - 1][0] . " " . $coordinates[$i - 1][1];
+        $lines[] =
+            $coordinates[0][0] . " " . $coordinates[0][1];
 
         return $lines;
     }
@@ -203,36 +187,25 @@ class CNCMillingValidator
     private function canReach() : bool
     {
         $layers = $this->getPolygons();
+        $progressBar = new Manager(0, count($layers) - 1);
+
         $topLayerLines = $this->buildLayerLines($layers[0]);
+        $pointLocation = new pointLocation();
 
         for ($i = 1; $i < count($layers); $i++) {
             if (count($layers[$i]) != 0) {
-                $layerLines = $this->buildLayerLines($layers[$i]);
-                foreach ($topLayerLines as $topLayerLine) {
-                    foreach ($layerLines as $layerLine) {
-                        // Lines overlap.
-                        if ($topLayerLine[0] == $layerLine[0] &&
-                            $topLayerLine[1] == $layerLine[1]) {
-                            continue;
-                        }
-
-                        if ($this->doLinesIntersect(
-                            $topLayerLine[0][0], $topLayerLine[0][1],
-                            $topLayerLine[1][0], $topLayerLine[1][1],
-                            $layerLine[0][0], $layerLine[0][1],
-                            $layerLine[1][0], $layerLine[1][1]
-                        )
-                        ) {
-                            var_dump(array(                            $topLayerLine[0][0], $topLayerLine[0][1],
-                                $topLayerLine[1][0], $topLayerLine[1][1],
-                                $layerLine[0][0], $layerLine[0][1],
-                                $layerLine[1][0], $layerLine[1][1]));
-                            die();
-                            return false;
-                        }
+                foreach ($layers[$i] as $point) {
+                    if ($pointLocation->pointInPolygon(
+                        $point[0] . " " . $point[1],
+                        $topLayerLines,
+                        true
+                    ) == "outside") {
+                        $progressBar->update($i - 1);
+                        return false;
                     }
                 }
             }
+            $progressBar->update($i - 1);
         }
 
         return true;
@@ -269,7 +242,7 @@ class CNCMillingValidator
                         if ($x > $maxX) $maxX = $x;
                         if ($y > $maxY) $maxY = $y;
                         if ($z > $maxZ) $maxZ = $z;
-                        $polygons[$polygon][] = array($x, $y);
+                        $polygons[$polygon][] = array($x, $y, $z);
                     }
                     break;
             }

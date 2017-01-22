@@ -1,5 +1,6 @@
 {
   "require": {
-    "php3d/stlslice": "1.*"
+    "php3d/stlslice": "1.*",
+    "guiguiboy/php-cli-progress-bar": "dev-master"
   }
 }
