@@ -6,24 +6,36 @@ use php3d\stlslice\Examples\STLMillingEdit;
 use php3d\stlslice\STLSlice;
 use php3d\stl\STL;
 
-if (count($argv) !== 2) {
-    die("Usage: php " . $argv[0] . " file-path\n");
+ini_set('memory_limit', -1);
+
+if (count($argv) !== 3) {
+    die("Usage: php " . $argv[0] . " file-path output-path\n");
 }
 
 $fileName = $argv[1];
 
 try {
     bcscale(16);
+
+    echo "[+] Reading STL file...\n";
     $stl = STL::fromString(file_get_contents($fileName));
+
+    echo "[+] Removing edges...\n";
     $mill = STL::fromArray((new STLMillingEdit($stl->toArray()))
         ->extractMillingContent()
         ->getStlFileContentArray()
     );
 
-    $layers = (new STLSlice($mill, 100))
+    //file_put_contents("test.json", json_encode($mill->toArray())); die();
+
+    echo "[+] Slicing objects...\n";
+    $layers = (new STLSlice($mill, 10))
         ->slice();
 
-    die((new STL2GCode($layers, 100))->toGCodeString());
+    echo "[+] Generating GCode...\n";
+    file_put_contents($argv[2], (new STL2GCode($layers, 10))->toGCodeString());
+
+    echo "[++] Done.\n";
 } catch (Exception $ex) {
-    die("Can not convert file: " . $ex->getMessage());
+    die("[-] Can not convert file: " . $ex->getMessage());
 }
