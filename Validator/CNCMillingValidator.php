@@ -194,13 +194,13 @@ class CNCMillingValidator
 
         for ($i = 1; $i < count($layers); $i++) {
             if (count($layers[$i]) != 0) {
-                foreach ($layers[$i] as $point) {
+                foreach ($layers[$i] as $crt => $point) {
                     if ($pointLocation->pointInPolygon(
                         $point[0] . " " . $point[1],
                         $topLayerLines,
                         true
                     ) == "outside") {
-                        if ($point[2] >= $this->getMaxZ()) {
+                        if (round($point[2], 1) >= $this->getMaxZ()) {
                             $topLayerLines = $this->buildLayerLines($layers[$i]);
                             break;
                         }
