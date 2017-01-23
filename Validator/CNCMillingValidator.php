@@ -200,6 +200,10 @@ class CNCMillingValidator
                         $topLayerLines,
                         true
                     ) == "outside") {
+                        if ($point[2] >= $this->getMaxZ()) {
+                            $topLayerLines = $this->buildLayerLines($layers[$i]);
+                            break;
+                        }
                         $progressBar->update($i - 1);
                         return false;
                     }
@@ -232,7 +236,7 @@ class CNCMillingValidator
                 case "G1":
                     if (count($command) == 2) {
                         $z = (float) substr($command[1], 1);
-                        if ($z > $maxZ) $maxZ = $z;
+                        if ($z > $maxZ) $maxZ = round($z, 1);
                         $polygon++;
                         $polygons[$polygon] = array();
                     } elseif (count($command) == 4) {
@@ -241,7 +245,7 @@ class CNCMillingValidator
                         $z = (float) substr($command[3], 1);
                         if ($x > $maxX) $maxX = $x;
                         if ($y > $maxY) $maxY = $y;
-                        if ($z > $maxZ) $maxZ = $z;
+                        if ($z > $maxZ) $maxZ = round($z, 1);
                         $polygons[$polygon][] = array($x, $y, $z);
                     }
                     break;

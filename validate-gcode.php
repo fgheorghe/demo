@@ -16,11 +16,11 @@ try {
     bcscale(16);
     (new CNCMillingValidator((new CNCMachine()), file_get_contents($fileName)))->validate();
 } catch (DoesNotFitException $ex) {
-    die("Piece does not fit machine: " . $ex->getMessage() . "\n");
+    die("\nPiece does not fit machine: " . $ex->getMessage() . "\n");
 } catch (UnreachableAreaException $ex) {
-    die("Unreachable area detected.\n");
+    die("\nUnreachable area detected.\n");
 } catch (Exception $ex) {
-    die("Unknown error: " . $ex->getMessage() . ".\n");
+    die("\nUnknown error: " . $ex->getMessage() . ".\n");
 }
 
-echo "GCode valid.\n";
+echo "\nGCode valid.\n";
